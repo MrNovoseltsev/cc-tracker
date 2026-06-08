@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output / artifacts
+dist/
+out/
+out-tests/
+*.vsix
+
+# Secrets / credentials (never commit)
+.env
+.env.*
+*.pat
+*.pem
+*.key
+.credentials.json
+.vsce
+*.token
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode-test/
+.DS_Store
+Thumbs.db
