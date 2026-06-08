@@ -24,4 +24,6 @@ npm-debug.log*
 # Editor / OS
 .vscode-test/
 .DS_Store
+._*
+.AppleDouble
 Thumbs.db

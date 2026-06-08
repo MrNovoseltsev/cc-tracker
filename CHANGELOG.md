@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.1] — 2026-06-08
+
+### Added
+- Screenshots (status bar and side panel) on the Marketplace page / README.
+
 ## [0.1.0] — 2026-06-07
 
 ### Added

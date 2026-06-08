@@ -3,6 +3,16 @@
 Shows Claude Code token usage for the active **5-hour limit window** and the **time until it
 resets** — right inside VS Code.
 
+## Screenshots
+
+Status bar gauge — usage, tokens, and reset timer at a glance:
+
+![Status bar gauge](images/status-bar.png)
+
+Side panel — official 5-hour and weekly usage with a token breakdown:
+
+![Side panel](images/panel.png)
+
 ## Features
 
 - **Status bar**: a solid fill gauge + percentage + absolute token count + reset timer.

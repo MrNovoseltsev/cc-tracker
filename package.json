@@ -2,7 +2,7 @@
   "name": "cc-tracker",
   "displayName": "CC Tracker — Claude Code Usage",
   "description": "Shows Claude Code token usage for the active 5-hour limit window and the time until it resets.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "MrN-studio",
   "license": "MIT",
   "icon": "icon.png",
