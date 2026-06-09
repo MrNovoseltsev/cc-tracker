@@ -2,7 +2,7 @@
   "name": "cc-tracker",
   "displayName": "CC Tracker — Claude Code Usage",
   "description": "Shows Claude Code token usage for the active 5-hour limit window and the time until it resets.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "MrN-studio",
   "license": "MIT",
   "icon": "icon.png",
@@ -86,11 +86,6 @@
           "minimum": 5,
           "maximum": 30,
           "description": "Number of circles in the status bar gauge. 10 = a 10% step per circle."
-        },
-        "ccTracker.useApi": {
-          "type": "boolean",
-          "default": true,
-          "description": "Use official values from the Anthropic API (/api/oauth/usage) via Claude Code's OAuth token. Off = local estimate from transcripts only, no network requests."
         }
       }
     }

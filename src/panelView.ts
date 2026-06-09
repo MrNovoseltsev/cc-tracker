@@ -4,17 +4,14 @@ import { ActiveSession } from "./types";
 export interface PanelPayload {
   hasBlock: boolean;
   percent: number;
-  limitReliable: boolean;
+  apiState: "live" | "stale" | "unavailable";
   totalTokens: number;
   input: number;
   output: number;
   cacheCreation: number;
   cacheRead: number;
-  weightedUsed: number;
-  estimatedLimit: number;
   blockStart: number | null;
   resetAt: number | null;
-  source: "api" | "estimate";
   weeklyPercent: number | null;
   weeklyResetAt: number | null;
 }
@@ -53,17 +50,14 @@ export class PanelViewProvider implements vscode.WebviewViewProvider {
     const payload: PanelPayload = {
       hasBlock: !!session.block,
       percent: session.percentUsed,
-      limitReliable: session.limitIsReliable,
+      apiState: session.apiState,
       totalTokens: session.block?.totals.total ?? 0,
       input: session.block?.totals.input ?? 0,
       output: session.block?.totals.output ?? 0,
       cacheCreation: session.block?.totals.cacheCreation ?? 0,
       cacheRead: session.block?.totals.cacheRead ?? 0,
-      weightedUsed: session.weightedUsed,
-      estimatedLimit: session.estimatedLimit,
       blockStart: session.block?.start ?? null,
       resetAt: session.resetAt,
-      source: session.source,
       weeklyPercent: session.weeklyPercent,
       weeklyResetAt: session.weeklyResetAt,
     };
@@ -149,21 +143,21 @@ export class PanelViewProvider implements vscode.WebviewViewProvider {
   }
 
   function render(p) {
-    if (!p || !p.hasBlock) {
-      content.innerHTML = '<div class="empty">No active Claude Code session.<br/>No active 5-hour window found.</div>';
+    if (!p || !p.hasBlock || p.apiState === 'unavailable') {
+      content.innerHTML = '<div class="empty">No API data yet.<br/>Make sure you are logged in to Claude Code.</div>';
       return;
     }
     const pct = Math.round(p.percent);
-    const api = p.source === 'api';
-    const weekly = (api && p.weeklyPercent != null)
+    const stale = p.apiState === 'stale';
+    const weekly = (p.weeklyPercent != null)
       ? '<div class="sub">Weekly (7d): <b>' + Math.round(p.weeklyPercent) + '%</b>' +
         (p.weeklyResetAt != null ? ' · resets ' + clock(p.weeklyResetAt) : '') + '</div>'
       : '';
-    const footer = api
-      ? '<div class="muted" style="margin-top:8px;font-size:11px">Source: Anthropic API — official values, same as “Account &amp; usage”.</div>'
-      : '<div class="muted" style="margin-top:8px;font-size:11px">Estimate: percentage by weighted load (cache-read ×0.1, output ×5) relative to your peak window. Exact values need network access.</div>';
+    const footer = stale
+      ? '<div class="muted" style="margin-top:8px;font-size:11px">Last known value — stale, refreshing…</div>'
+      : '<div class="muted" style="margin-top:8px;font-size:11px">Source: Anthropic API — official values, same as “Account &amp; usage”.</div>';
     content.innerHTML =
-      '<div class="pct">' + pct + '%' + (api ? '' : ' <span class="approx">(estimate)</span>') + '</div>' +
+      '<div class="pct">' + pct + '%' + (stale ? ' <span class="approx">(stale)</span>' : '') + '</div>' +
       scale(p.percent) +
       weekly +
       '<div class="total">' + fmt(p.totalTokens) + ' tokens this session</div>' +
@@ -174,7 +168,6 @@ export class PanelViewProvider implements vscode.WebviewViewProvider {
         row('Cache (read)', full(p.cacheRead)) +
         row('Window start', clock(p.blockStart)) +
         row('Resets at', clock(p.resetAt)) +
-        (api ? '' : row('Weighted load', fmt(Math.round(p.weightedUsed)) + ' / ' + fmt(Math.round(p.estimatedLimit)) + (p.limitReliable ? '' : ' (~)'))) +
       '</table>' +
       footer;
   }

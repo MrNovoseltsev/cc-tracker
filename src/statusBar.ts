@@ -34,9 +34,10 @@ export class StatusBar {
 
   private render(): void {
     const s = this.session;
-    if (!s || !s.block) {
-      this.item.text = "$(circle-slash) CC: no active session";
-      this.item.tooltip = "Claude Code: no active 5-hour window found.";
+    if (!s || !s.block || s.apiState === "unavailable") {
+      this.item.text = "$(sync~spin) CC: waiting for API";
+      this.item.tooltip =
+        "Claude Code usage: no API data yet. Make sure you are logged in to Claude Code.";
       this.item.backgroundColor = undefined;
       return;
     }
@@ -46,11 +47,13 @@ export class StatusBar {
     const pct = Math.round(s.percentUsed);
     const tokens = formatTokens(s.block.totals.total);
     const left = s.timeLeftMs !== null ? formatDuration(Math.max(0, s.resetAt! - Date.now())) : "—";
-    const approx = s.limitIsReliable ? "" : "~";
+    const stale = s.apiState === "stale";
+    const icon = stale ? "$(cloud)" : "$(pulse)";
+    const staleSuffix = stale ? " (stale)" : "";
 
     // `bar` is fixed-width: filled circles ● for the used %, empty circles ○ for
     // the remaining %. Equal-width glyphs keep the proportions honest.
-    this.item.text = `$(pulse) ${bar} ${approx}${pct}% · ${tokens} · $(history) ${left}`;
+    this.item.text = `${icon} ${bar} ${pct}%${staleSuffix} · ${tokens} · $(history) ${left}`;
     this.item.tooltip = this.buildTooltip(s);
 
     // Tint when close to the estimated limit.
@@ -76,20 +79,15 @@ export class StatusBar {
       md.appendMarkdown(`- Resets at: **${formatClock(s.resetAt)}**\n`);
     }
 
-    if (s.source === "api") {
-      if (s.weeklyPercent !== null) {
-        const wk = `${Math.round(s.weeklyPercent)}%`;
-        const wkReset = s.weeklyResetAt !== null ? ` (resets ${formatClock(s.weeklyResetAt)})` : "";
-        md.appendMarkdown(`- Weekly (7d): **${wk}**${wkReset}\n`);
-      }
-      md.appendMarkdown(`\n_Source: Anthropic API — official values._\n`);
+    if (s.weeklyPercent !== null) {
+      const wk = `${Math.round(s.weeklyPercent)}%`;
+      const wkReset = s.weeklyResetAt !== null ? ` (resets ${formatClock(s.weeklyResetAt)})` : "";
+      md.appendMarkdown(`- Weekly (7d): **${wk}**${wkReset}\n`);
+    }
+    if (s.apiState === "stale") {
+      md.appendMarkdown(`\n_Last known value — stale, refreshing…_\n`);
     } else {
-      md.appendMarkdown(
-        `\n_Estimate: percentage by weighted load relative to your peak window (cache-read ×0.1, output ×5). Exact values need network access._\n`,
-      );
-      md.appendMarkdown(
-        `- Weighted load: ${Math.round(s.weightedUsed).toLocaleString("en-US")} / ${Math.round(s.estimatedLimit).toLocaleString("en-US")}${s.limitIsReliable ? "" : " (approximate)"}\n`,
-      );
+      md.appendMarkdown(`\n_Source: Anthropic API — official values._\n`);
     }
     return md;
   }

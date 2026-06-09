@@ -107,11 +107,23 @@ function parseTs(s: unknown): number | null {
   return Number.isNaN(t) ? null : t;
 }
 
-/** Fetch live usage, or null on any failure (missing creds, offline, 401, …). */
-export async function fetchApiUsage(claudeDir: string): Promise<ApiUsage | null> {
+export interface UsageFetch {
+  /** Parsed usage, or null on any failure (missing creds, offline, 401, 429, …). */
+  usage: ApiUsage | null;
+  /**
+   * True when the request was rejected with HTTP 429. The `/api/oauth/usage`
+   * endpoint rate-limits per OAuth token, and that token is shared with Claude
+   * Code itself — so the caller should back off to avoid starving Claude Code's
+   * own "Account & usage" panel.
+   */
+  rateLimited: boolean;
+}
+
+/** Fetch live usage. Never throws; failures are reported in the result. */
+export async function fetchApiUsage(claudeDir: string): Promise<UsageFetch> {
   const token = readOAuthToken(claudeDir);
   if (!token) {
-    return null;
+    return { usage: null, rateLimited: false };
   }
   try {
     const res = await fetch(`${BASE_API_URL}${USAGE_PATH}`, {
@@ -122,11 +134,14 @@ export async function fetchApiUsage(claudeDir: string): Promise<ApiUsage | null>
       },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    if (!res.ok) {
-      return null;
+    if (res.status === 429) {
+      return { usage: null, rateLimited: true };
     }
-    return parseUsageResponse(await res.json());
+    if (!res.ok) {
+      return { usage: null, rateLimited: false };
+    }
+    return { usage: parseUsageResponse(await res.json()), rateLimited: false };
   } catch {
-    return null;
+    return { usage: null, rateLimited: false };
   }
 }

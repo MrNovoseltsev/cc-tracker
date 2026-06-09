@@ -20,8 +20,6 @@ export interface TokenTotals {
   cacheRead: number;
   /** Raw sum of all token kinds (shown to the user as the absolute number). */
   total: number;
-  /** Cost-weighted load used for limit/percentage math (see weights.ts). */
-  weighted: number;
 }
 
 export interface Block {
@@ -35,15 +33,14 @@ export interface Block {
 
 export interface ActiveSession {
   block: Block | null;
-  /** Where percentUsed/resetAt came from: live Anthropic API, or a local estimate. */
-  source: "api" | "estimate";
-  /** Estimated *weighted* token ceiling for a 5h window (estimate mode only). */
-  estimatedLimit: number;
-  /** Weighted load of the active block (matches the units of estimatedLimit). */
-  weightedUsed: number;
-  /** True for API data, or for an estimate backed by enough history. */
-  limitIsReliable: boolean;
-  /** 0..100 percent of the 5h limit used. */
+  /**
+   * Freshness of the API-sourced percentage:
+   *  - "live": fresh value from the Anthropic API
+   *  - "stale": last known API value, kept while a fresh poll is pending
+   *  - "unavailable": no API value obtained yet (no token / offline / opted nothing)
+   */
+  apiState: "live" | "stale" | "unavailable";
+  /** 0..100 percent of the 5h limit used (0 when unavailable). */
   percentUsed: number;
   /** Epoch ms when the 5h window resets, or null. */
   resetAt: number | null;

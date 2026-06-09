@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0] — 2026-06-08
+
+### Changed
+- The 5-hour percentage now comes **only** from the Anthropic API — the local estimate is gone,
+  so the value no longer jumps when sources switch. When a poll fails the last value is kept and
+  marked *stale*; before the first value arrives the gauge reads *waiting for API*.
+- Polite polling of `/api/oauth/usage` so we no longer starve Claude Code's own *Account &
+  usage* panel (which could get stuck on *Loading usage data…*): interval raised 60s → ~3min
+  with jitter, single in-flight request, and exponential back-off on HTTP 429.
+
+### Removed
+- `ccTracker.useApi` setting (the API is the only source now).
+- The local limit estimate and its cost-weighting machinery.
+
 ## [0.1.1] — 2026-06-08
 
 ### Added
